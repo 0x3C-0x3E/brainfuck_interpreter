@@ -1,13 +1,18 @@
 #include "dynamic_array.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
-DArray d_array_create(size_t data_size) {
-    DArray new_array = {
+void d_array_create(DArray* d_array, size_t data_size) {
+    *d_array = (DArray) {
         .start = malloc(data_size),
         .data_size = data_size,
     };
-    return new_array;
+
+    if (d_array->start == NULL) {
+        printf("Error during initialisation of d_array");
+    }
 }
 
 void d_array_append(DArray* d_array, void* data) {
@@ -28,4 +33,8 @@ void d_array_append(DArray* d_array, void* data) {
 
 void* d_array_get(DArray* d_array, size_t index) {
     return d_array->start + (index * d_array->data_size);
+}
+
+void d_array_free(DArray* d_array) {
+    free(d_array->start);
 }
