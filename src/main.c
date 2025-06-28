@@ -185,7 +185,7 @@ void start_interpreter() {
                 *memory_cell -= instruction->operation;
                 break;
             case IR_OUT:
-                printf("%c\n", *memory_cell);
+                printf("%c | %d\n", (char)*memory_cell, (int)*memory_cell);
                 break;
             case IR_IN:
                 break;
@@ -200,6 +200,8 @@ void start_interpreter() {
                 }
                 break;
         }
+
+        bf_interpreter.instruction_ptr += 1;
 
         if (bf_interpreter.instruction_ptr == ir_instructions->size) {
             running = 0;
@@ -232,11 +234,12 @@ int main(int argc, char** argv) {
     dump_ir();
 
     init_interpreter();
-    // start_interpreter();
+    start_interpreter();
 
 
     d_array_free(parsed_chars);
     d_array_free(ir_instructions);
+    d_array_free(bf_interpreter.memory);
 
     return 0;
 }

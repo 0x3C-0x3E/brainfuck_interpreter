@@ -19,11 +19,8 @@ void d_array_append(DArray* d_array, void* data) {
     // check if array is full
     if (d_array->size == d_array->capacity) {
         size_t new_capacity = d_array->capacity == 0 ? 4 : d_array->capacity * 2;
-        void* new_start = realloc(d_array->start, d_array->data_size* new_capacity);
-        if (new_start == NULL) {
-            printf("!! D_ARRAY: REALLOC FAILED\n");
-            return;
-        }
+        d_array->start = realloc(d_array->start, d_array->data_size* new_capacity);
+        d_array->capacity = new_capacity;
     }
 
     void* target = (char*)d_array->start + (d_array->size * d_array->data_size);
@@ -37,4 +34,5 @@ void* d_array_get(DArray* d_array, size_t index) {
 
 void d_array_free(DArray* d_array) {
     free(d_array->start);
+    free(d_array);
 }
