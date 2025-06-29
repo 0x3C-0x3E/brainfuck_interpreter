@@ -1,4 +1,4 @@
-#include "dynamic_array.h"
+#include "d_array.h"
 #include "log_util.h"
 #include "file_handler.h"
 #include <stdio.h>
@@ -9,12 +9,12 @@
 
 
 InputFile input_file = {0};
-DArray* parsed_chars;
+D_Array* parsed_chars;
 const char* valid_tokens = "><+-.,[]";
 
 typedef enum {
-    IR_DEC_DP = '>',
-    IR_INC_DP = '<',
+    IR_DEC_DP = '<',
+    IR_INC_DP = '>',
     IR_ADD = '+',
     IR_SUB = '-',
     IR_OUT = '.',
@@ -31,11 +31,11 @@ typedef struct {
     int operation;
 } IRInstruction;
 
-DArray* ir_instructions;
+D_Array* ir_instructions;
 
 
 typedef struct {
-    DArray* memory;
+    D_Array* memory;
     size_t memory_ptr;
     size_t instruction_ptr;
 
@@ -44,16 +44,9 @@ typedef struct {
 BF_Interpreter bf_interpreter = {0};
 
 int init_arrays() {
-    parsed_chars = (DArray*) malloc(sizeof(DArray));
-    d_array_create(parsed_chars, sizeof(char));
+    parsed_chars = d_array_new(sizeof(char));
 
-    ir_instructions = (DArray*) malloc(sizeof(DArray));
-    d_array_create(ir_instructions, sizeof(IRInstruction));
-
-    if (parsed_chars == NULL || ir_instructions == NULL) {
-        log_msg(LOG_CRITICAL_ERROR, "malloc failed for d_array\n");
-        return 1;
-    }
+    ir_instructions = d_array_new(sizeof(IRInstruction));
 
     return 0;
 }
@@ -127,7 +120,6 @@ void backtrace() {
 }
 
 int generate_ir() {
-    d_array_create(ir_instructions, sizeof(IRInstruction));
 
     IRInstruction prev_instruction = {0};
 
@@ -157,14 +149,13 @@ void dump_ir() {
 void init_interpreter() {
     log_msg(LOG_INFO, "INITIALIZING INTERPRETER\n");
     bf_interpreter = (BF_Interpreter) {
-        .memory = (DArray*) malloc(sizeof(DArray)),
+        .memory = d_array_new(sizeof(unsigned char)),  
         .memory_ptr = 0,
         .instruction_ptr = 0,
     };
-
-    d_array_create(bf_interpreter.memory, sizeof(unsigned char));
-
-    d_array_append_clear(bf_interpreter.memory);
+    
+    unsigned char c = 0;
+    d_array_append(bf_interpreter.memory, &c);
 }
 
 void start_interpreter() {
@@ -182,9 +173,12 @@ void start_interpreter() {
                 break;
             case IR_INC_DP:
                 bf_interpreter.memory_ptr += instruction->operation;
-                if (bf_interpreter.memory->size == bf_interpreter.memory_ptr) {
+                log_msg(LOG_INFO, "Increased asd ptr: %d\n", instruction->operation);
+                if (bf_interpreter.memory->capacity == bf_interpreter.memory_ptr) {
                     // not enough memory
-                    d_array_append_clear(bf_interpreter.memory);
+                    printf("had to increase memory\n");
+                    unsigned char c = 0;
+                    d_array_append(bf_interpreter.memory, &c);
                 }
                 break;
             case IR_ADD:
