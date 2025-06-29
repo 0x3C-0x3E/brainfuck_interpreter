@@ -163,6 +163,8 @@ void init_interpreter() {
     };
 
     d_array_create(bf_interpreter.memory, sizeof(unsigned char));
+
+    d_array_append_clear(bf_interpreter.memory);
 }
 
 void start_interpreter() {
@@ -170,13 +172,20 @@ void start_interpreter() {
     while (running == 1) {
         IRInstruction* instruction = (IRInstruction*) d_array_get(ir_instructions, bf_interpreter.instruction_ptr);
 
-        unsigned char* memory_cell = d_array_get(bf_interpreter.memory, bf_interpreter.instruction_ptr);
+        unsigned char* memory_cell = d_array_get(bf_interpreter.memory, bf_interpreter.memory_ptr);
         switch (instruction->type) {
             case IR_DEC_DP:
-                bf_interpreter.instruction_ptr -= instruction->operation;
+                bf_interpreter.memory_ptr -= instruction->operation;
+                if (bf_interpreter.memory_ptr == -1) {
+                    bf_interpreter.memory_ptr = 0;
+                }
                 break;
             case IR_INC_DP:
-                bf_interpreter.instruction_ptr += instruction->operation;
+                bf_interpreter.memory_ptr += instruction->operation;
+                if (bf_interpreter.memory->size == bf_interpreter.memory_ptr) {
+                    // not enough memory
+                    d_array_append_clear(bf_interpreter.memory);
+                }
                 break;
             case IR_ADD:
                 *memory_cell += instruction->operation;

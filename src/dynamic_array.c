@@ -1,4 +1,5 @@
 #include "dynamic_array.h"
+#include "log_util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,9 +7,11 @@
 
 void d_array_create(DArray* d_array, size_t data_size) {
     *d_array = (DArray) {
-        .start = malloc(data_size),
+        .start = malloc(1 * data_size),
         .data_size = data_size,
+        .size = 1,
     };
+
 
     if (d_array->start == NULL) {
         printf("Error during initialisation of d_array");
@@ -16,16 +19,20 @@ void d_array_create(DArray* d_array, size_t data_size) {
 }
 
 void d_array_append(DArray* d_array, void* data) {
-    // check if array is full
-    if (d_array->size == d_array->capacity) {
-        size_t new_capacity = d_array->capacity == 0 ? 4 : d_array->capacity * 2;
-        d_array->start = realloc(d_array->start, d_array->data_size* new_capacity);
-        d_array->capacity = new_capacity;
+    d_array->size ++;
+    void* new_start = realloc(d_array->start, d_array->data_size * d_array->size);
+    if (!new_start) {
+        log_msg(LOG_CRITICAL_ERROR, "REALLOC FAILED!\n");
+        return;
     }
 
-    void* target = (char*)d_array->start + (d_array->size * d_array->data_size);
+    void* target = (char*)d_array->start + ((d_array->size - 1) * d_array->data_size);
     memcpy(target, data, d_array->data_size);
-    d_array->size ++;
+}
+
+void d_array_append_clear(DArray* d_array) {
+    unsigned char a = 0;
+    d_array_append(d_array, &a);
 }
 
 void* d_array_get(DArray* d_array, size_t index) {

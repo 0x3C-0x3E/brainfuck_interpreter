@@ -4,15 +4,16 @@
 #include <stdint.h>
 
 typedef struct {
-void* start;
-size_t size;
-size_t capacity;
-size_t data_size;
+    void* start;
+    size_t size;
+    size_t data_size;
 } DArray;
 
 void d_array_create(DArray* d_array, size_t data_size);
 
 void d_array_append(DArray* d_array, void* data);
+
+void d_array_append_clear(DArray* d_array);
 
 void* d_array_get(DArray* d_array, size_t index);
 
