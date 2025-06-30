@@ -30,13 +30,16 @@ failed_init:
 void d_array_append(D_Array* d_array, void* data) {
     // check if we already exhausted the capacity and need to realloc
     if (d_array->size == d_array->capacity) {
-        size_t new_capacity = (d_array->capacity != 0) ? d_array->capacity * 2 : 2;
+        // size_t new_capacity = (d_array->capacity != 0) ? d_array->capacity * 2 : 2;
+
+        size_t new_capacity = d_array->capacity + 1;
 
         void* new_data = realloc(d_array->data, new_capacity * d_array->data_size);
         if (new_data == NULL) {
             perror("[ERROR] D_Array failed to realloc\n");
             return;
         }
+        
         
         d_array->capacity = new_capacity;
         d_array->data = new_data;

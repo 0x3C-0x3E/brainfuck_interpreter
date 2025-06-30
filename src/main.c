@@ -36,6 +36,7 @@ D_Array* ir_instructions;
 
 typedef struct {
     D_Array* memory;
+    // not a literal pointer just the index into the d_array memory
     size_t memory_ptr;
     size_t instruction_ptr;
 
@@ -154,6 +155,7 @@ void init_interpreter() {
         .instruction_ptr = 0,
     };
     
+    // first memory cell
     unsigned char c = 0;
     d_array_append(bf_interpreter.memory, &c);
 }
@@ -172,13 +174,24 @@ void start_interpreter() {
                 }
                 break;
             case IR_INC_DP:
-                bf_interpreter.memory_ptr += instruction->operation;
-                log_msg(LOG_INFO, "Increased asd ptr: %d\n", instruction->operation);
-                if (bf_interpreter.memory->capacity == bf_interpreter.memory_ptr) {
-                    // not enough memory
-                    printf("had to increase memory\n");
+                // bf_interpreter.memory_ptr += instruction->operation;
+                // log_msg(LOG_INFO, "Increased memory ptr by: %d\n", instruction->operation);
+                // if ((bf_interpreter.memory->capacity-1) == bf_interpreter.memory_ptr) {
+                //     // not enough memory
+                //     log_msg(LOG_INFO, "had to increase memory array\n");
+                //     unsigned char c = 0;
+                //     d_array_append(bf_interpreter.memory, &c);
+                // }
+
+                if ((bf_interpreter.memory->capacity - 1) == bf_interpreter.memory_ptr) {
+                    // reached just the end of the memory
+                    // append operation*times 
                     unsigned char c = 0;
-                    d_array_append(bf_interpreter.memory, &c);
+                    log_msg(LOG_INFO, "STARTING MEMORY EXPANSION:\n");
+                    for (size_t i = 0; i < instruction->operation; i++) {
+                        d_array_append(bf_interpreter.memory, &c);
+                    }
+                    bf_interpreter.memory_ptr += instruction->operation;
                 }
                 break;
             case IR_ADD:
