@@ -1,4 +1,4 @@
-#include "dynamic_array.h"
+#include "d_array.h"
 #include "log_util.h"
 #include "file_handler.h"
 #include <stdio.h>
@@ -9,12 +9,12 @@
 
 
 InputFile input_file = {0};
-DArray* parsed_chars;
+D_Array* parsed_chars;
 const char* valid_tokens = "><+-.,[]";
 
 typedef enum {
-    IR_DEC_DP = '>',
-    IR_INC_DP = '<',
+    IR_DEC_DP = '<',
+    IR_INC_DP = '>',
     IR_ADD = '+',
     IR_SUB = '-',
     IR_OUT = '.',
@@ -31,11 +31,12 @@ typedef struct {
     int operation;
 } IRInstruction;
 
-DArray* ir_instructions;
+D_Array* ir_instructions;
 
 
 typedef struct {
-    DArray* memory;
+    D_Array* memory;
+    // not a literal pointer just the index into the d_array memory
     size_t memory_ptr;
     size_t instruction_ptr;
 
@@ -44,16 +45,9 @@ typedef struct {
 BF_Interpreter bf_interpreter = {0};
 
 int init_arrays() {
-    parsed_chars = (DArray*) malloc(sizeof(DArray));
-    d_array_create(parsed_chars, sizeof(char));
+    parsed_chars = d_array_new(sizeof(char));
 
-    ir_instructions = (DArray*) malloc(sizeof(DArray));
-    d_array_create(ir_instructions, sizeof(IRInstruction));
-
-    if (parsed_chars == NULL || ir_instructions == NULL) {
-        log_msg(LOG_CRITICAL_ERROR, "malloc failed for d_array\n");
-        return 1;
-    }
+    ir_instructions = d_array_new(sizeof(IRInstruction));
 
     return 0;
 }
@@ -99,8 +93,8 @@ handle_new_instruction:
 
 }
 
-void backtrace() {
-    log_msg(LOG_INFO, "Starting backtrace!\n");
+void backpatch() {
+    log_msg(LOG_INFO, "Starting backpatch!\n");
     int jump_stack[parsed_chars->size];
     size_t jump_stack_size = 0;
 
@@ -121,13 +115,12 @@ void backtrace() {
             instruction->operation = left_bracket_index;
             IRInstruction* other_instruction = (IRInstruction*) d_array_get(ir_instructions, left_bracket_index);
             other_instruction->operation = i;
-            log_msg(LOG_INFO,"Backtrace found closing bracket at %d with left bracket at index %d\n", i, left_bracket_index);
+            log_msg(LOG_INFO,"Backpatch found closing bracket at %d with left bracket at index %d\n", i, left_bracket_index);
         }
     }
 }
 
 int generate_ir() {
-    d_array_create(ir_instructions, sizeof(IRInstruction));
 
     IRInstruction prev_instruction = {0};
 
@@ -141,7 +134,7 @@ int generate_ir() {
     //push last ir_instruction to array
     d_array_append(ir_instructions, &prev_instruction);
 
-    backtrace();
+    backpatch();
     
     return 0; 
 }
@@ -157,14 +150,14 @@ void dump_ir() {
 void init_interpreter() {
     log_msg(LOG_INFO, "INITIALIZING INTERPRETER\n");
     bf_interpreter = (BF_Interpreter) {
-        .memory = (DArray*) malloc(sizeof(DArray)),
+        .memory = d_array_new(sizeof(unsigned char)),  
         .memory_ptr = 0,
         .instruction_ptr = 0,
     };
-
-    d_array_create(bf_interpreter.memory, sizeof(unsigned char));
-
-    d_array_append_clear(bf_interpreter.memory);
+    
+    // first memory cell
+    unsigned char c = 0;
+    d_array_append(bf_interpreter.memory, &c);
 }
 
 void start_interpreter() {
@@ -181,10 +174,24 @@ void start_interpreter() {
                 }
                 break;
             case IR_INC_DP:
-                bf_interpreter.memory_ptr += instruction->operation;
-                if (bf_interpreter.memory->size == bf_interpreter.memory_ptr) {
-                    // not enough memory
-                    d_array_append_clear(bf_interpreter.memory);
+                // bf_interpreter.memory_ptr += instruction->operation;
+                // log_msg(LOG_INFO, "Increased memory ptr by: %d\n", instruction->operation);
+                // if ((bf_interpreter.memory->capacity-1) == bf_interpreter.memory_ptr) {
+                //     // not enough memory
+                //     log_msg(LOG_INFO, "had to increase memory array\n");
+                //     unsigned char c = 0;
+                //     d_array_append(bf_interpreter.memory, &c);
+                // }
+
+                if ((bf_interpreter.memory->capacity - 1) == bf_interpreter.memory_ptr) {
+                    // reached just the end of the memory
+                    // append operation*times 
+                    unsigned char c = 0;
+                    log_msg(LOG_INFO, "STARTING MEMORY EXPANSION:\n");
+                    for (size_t i = 0; i < instruction->operation; i++) {
+                        d_array_append(bf_interpreter.memory, &c);
+                    }
+                    bf_interpreter.memory_ptr += instruction->operation;
                 }
                 break;
             case IR_ADD:
