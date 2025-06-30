@@ -92,8 +92,8 @@ handle_new_instruction:
 
 }
 
-void backtrace() {
-    log_msg(LOG_INFO, "Starting backtrace!\n");
+void backpatch() {
+    log_msg(LOG_INFO, "Starting backpatch!\n");
     int jump_stack[parsed_chars->size];
     size_t jump_stack_size = 0;
 
@@ -114,7 +114,7 @@ void backtrace() {
             instruction->operation = left_bracket_index;
             IRInstruction* other_instruction = (IRInstruction*) d_array_get(ir_instructions, left_bracket_index);
             other_instruction->operation = i;
-            log_msg(LOG_INFO,"Backtrace found closing bracket at %d with left bracket at index %d\n", i, left_bracket_index);
+            log_msg(LOG_INFO,"Backpatch found closing bracket at %d with left bracket at index %d\n", i, left_bracket_index);
         }
     }
 }
@@ -133,7 +133,7 @@ int generate_ir() {
     //push last ir_instruction to array
     d_array_append(ir_instructions, &prev_instruction);
 
-    backtrace();
+    backpatch();
     
     return 0; 
 }
