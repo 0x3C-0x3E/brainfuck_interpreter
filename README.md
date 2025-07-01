@@ -1,5 +1,9 @@
 # Brainfuck interpreter written in C
 
- > not implemented yet (:
+## Usage
 
-using an IR step
+To run a .bf file, just provide the filepath as the second argument
+
+```
+ > ./bf_intep ./yourfile.bf
+```
