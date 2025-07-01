@@ -8,6 +8,8 @@ typedef enum {
     LOG_INFO,
     LOG_ERROR,
     LOG_CRITICAL_ERROR,
+    LOG_DUMP,
+    LOG_INTERP_DEBUG,
 } LOG_TYPE;
 
 // stuff that lets gcc check if i am wrong, which i am most of the time

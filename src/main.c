@@ -7,6 +7,8 @@
 #include <string.h>
 #include <assert.h>
 
+#define VERBOSE_OUTPUT 0
+#define DEBUG 0
 
 InputFile input_file = {0};
 D_Array* parsed_chars;
@@ -112,7 +114,7 @@ void backpatch() {
             int left_bracket_index = jump_stack[jump_stack_size];
 
 
-            instruction->operation = left_bracket_index;
+            instruction->operation = left_bracket_index; // we dont need a +1 there cause we increase +1 after each instruction anyway
             IRInstruction* other_instruction = (IRInstruction*) d_array_get(ir_instructions, left_bracket_index);
             other_instruction->operation = i;
             log_msg(LOG_INFO,"Backpatch found closing bracket at %d with left bracket at index %d\n", i, left_bracket_index);
@@ -140,11 +142,27 @@ int generate_ir() {
 }
 
 void dump_ir() {
-    printf("IR DUMP: size: %zu\n", ir_instructions->size);
+    log_msg(LOG_DUMP, "IR DUMP: size: %zu\n", ir_instructions->size);
     for (size_t i = 0; i < ir_instructions->size; i++) {
         IRInstruction* instruction = (IRInstruction*) d_array_get(ir_instructions, i);
-        log_msg(LOG_INFO,"  Type: %c, %d | Operation: %d\n", instruction->type, instruction->type, instruction->operation);
+        log_msg(LOG_DUMP,"%zu: Type: %c, %d | Operation: %d\n", i, instruction->type, instruction->type, instruction->operation);
     }
+    printf("\n\n");
+}
+
+void dump_memory() {
+    printf("----------------\n");
+    for (size_t i = 0; i < bf_interpreter.memory->size; i++) {
+        unsigned char* memory_cell = d_array_get(bf_interpreter.memory, i);
+        if (bf_interpreter.memory_ptr == i) {
+            printf("*");
+        } else {
+            printf(" ");
+        }
+        printf("%d |", *memory_cell);
+    }
+    printf("\n");
+    printf("----------------\n");
 }
 
 void init_interpreter() {
@@ -172,6 +190,7 @@ void start_interpreter() {
                 if (bf_interpreter.memory_ptr == -1) {
                     bf_interpreter.memory_ptr = 0;
                 }
+                log_msg(LOG_INTERP_DEBUG, "decrement memory ptr by %d\n", instruction->operation);
                 break;
             case IR_INC_DP:
                 // bf_interpreter.memory_ptr += instruction->operation;
@@ -183,44 +202,61 @@ void start_interpreter() {
                 //     d_array_append(bf_interpreter.memory, &c);
                 // }
 
-                if ((bf_interpreter.memory->capacity - 1) == bf_interpreter.memory_ptr) {
-                    // reached just the end of the memory
-                    // append operation*times 
-                    unsigned char c = 0;
-                    log_msg(LOG_INFO, "STARTING MEMORY EXPANSION:\n");
-                    for (size_t i = 0; i < instruction->operation; i++) {
+                for (size_t i = 0; i < instruction->operation; i++) {
+                    if ((bf_interpreter.memory->capacity - 1) == bf_interpreter.memory_ptr + i) {
+                        unsigned char c = 0;
                         d_array_append(bf_interpreter.memory, &c);
                     }
-                    bf_interpreter.memory_ptr += instruction->operation;
                 }
+                bf_interpreter.memory_ptr += instruction->operation;
+
+                log_msg(LOG_INTERP_DEBUG, "increment memory ptr by %d\n", instruction->operation);
                 break;
             case IR_ADD:
                 *memory_cell += instruction->operation;
+                log_msg(LOG_INTERP_DEBUG, "add %d to memory cell of index: %zu\n", instruction->operation, bf_interpreter.memory_ptr);
                 break;
             case IR_SUB:
                 *memory_cell -= instruction->operation;
+                log_msg(LOG_INTERP_DEBUG, "sub %d to memory cell of index: %zu\n", instruction->operation, bf_interpreter.memory_ptr);
                 break;
             case IR_OUT:
-                printf("%c | %d\n", (char)*memory_cell, (int)*memory_cell);
+                for (size_t i = 0; i < instruction->operation; i++) {
+                    if (VERBOSE_OUTPUT == 1) {
+                        printf("%c | %d\n", (char)*memory_cell, (int)*memory_cell);
+                    } else {
+                        printf("%c", (char)*memory_cell);
+                    }
+                }
                 break;
             case IR_IN:
                 break;
             case IR_JIZ:
                 if (*memory_cell == 0) {
                     bf_interpreter.instruction_ptr = instruction->operation;
+                    log_msg(LOG_INTERP_DEBUG, "Jump if zero [SUCCESS] jump to memory cell of index: %d\n", instruction->operation);
+                } else {
+                    log_msg(LOG_INTERP_DEBUG, "Jump if zero [FAIL] jump to memory cell of index: %d\n", instruction->operation);
                 }
                 break;
             case IR_JNZ:
                 if (*memory_cell != 0) {
                     bf_interpreter.instruction_ptr = instruction->operation;
+                    log_msg(LOG_INTERP_DEBUG, "Jump if not zero [SUCCESS] jump to memory cell of index: %d\n", instruction->operation);
+                } else {
+                    log_msg(LOG_INTERP_DEBUG, "Jump if not zero [FAIL] jump to memory cell of index: %d\n", instruction->operation);
                 }
                 break;
         }
 
         bf_interpreter.instruction_ptr += 1;
+        if (DEBUG) {
+            dump_memory();
+        }
 
-        if (bf_interpreter.instruction_ptr == ir_instructions->size) {
+        if (bf_interpreter.instruction_ptr >= ir_instructions->size) {
             running = 0;
+            printf("\n");
         }
     }
 }
