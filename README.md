@@ -20,4 +20,7 @@ or whatever you want to name your interpreter
 
 ## How it works
 
-Brainfuck is a relatively simple language that only has a few keywords. And if for example the '+' operation gets called a lot of times, we can collapse these instructions down into a single operation in an IR step.
+IR stands for intermediate representation and describes a intermediate step especially in compliers, where the source code has been paresed and an AST has been constructed but there are no direct machine code instruction written.
+I use an IR step only for doing optimisation because Brainfuck is a relatively simple language that only has a few keywords. So if for example the '+' operation gets called a lot of times, we can collapse these instructions down into a single operation.
+
+
